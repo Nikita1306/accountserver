@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/account_db
+    username: postgres
+    password: admin
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    generate-ddl: true
+  session:
+    store-type: jdbc
+    jdbc.initialize-schema: always
+    timeout:
+      seconds: 900
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics, caches
