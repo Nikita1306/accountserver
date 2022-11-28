@@ -17,11 +17,13 @@ public class AccountServiceImpl implements AccountService {
 
     @Autowired
     private AccountRepository accountRepository;
-
+    //TODO add check if not present
     @Override
     @CachePut(value="accounts", key="#id")
     public Long getAmount(Integer id) {
-        return accountRepository.findById(id).get().getBalance();
+        if (accountRepository.findById(id).isPresent())
+            return accountRepository.findById(id).get().getBalance();
+        else return  null;
     }
 
     @Override
