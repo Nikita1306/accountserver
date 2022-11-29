@@ -1,10 +1,10 @@
 package com.example.accountserver.service;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
+import com.codahale.metrics.ConsoleReporter;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.codahale.metrics.Meter;
@@ -15,40 +15,49 @@ import com.codahale.metrics.MetricRegistry;
 public class StatsService {
 
 	MetricRegistry mr = new MetricRegistry();
-	Meter meter = mr.meter("requests");
-
+	Meter meterGet = mr.meter("requestsGET");
+	Meter meterPut = mr.meter("requestsPUT");
 	private ConcurrentHashMap<String, Double> statsMap;
 
-	
-	Double pastHourResponseTime = 0.0;
-	
-	public void setPastHourResponseTime(Double pastHourResponseTime) {
-		this.pastHourResponseTime = pastHourResponseTime;
-	}
-
-	private String TOTAL_COUNT = "TOTAL";
-	private String PAST_MINUTE_AVERAGE_RESPONSE_TIME = "PAST_MINUTE_AVERAGE_RESPONSE_TIME";
+	private String TOTAL_COUNT_GET = "TOTAL_GET";
+	private String TOTAL_COUNT_PUT = "TOTAL_PUT";
 	
 	
 	public StatsService() {
 		statsMap = new ConcurrentHashMap<>();
-		statsMap.put(TOTAL_COUNT, 0.0);
-		meter.mark();
+		statsMap.put(TOTAL_COUNT_GET, 0.0);
+		statsMap.put(TOTAL_COUNT_PUT, 0.0);
+		meterGet.mark();
+		meterPut.mark();
 	}
 
-	public double numberOfRequests() {
-		log.info("Meter count: " + meter.getFifteenMinuteRate());
-
-		log.info("Meter count: " + meter.getCount());
-		return statsMap.get(TOTAL_COUNT);
+	public void resetStats() {
+		statsMap.put(TOTAL_COUNT_GET, 0.0);
+		statsMap.put(TOTAL_COUNT_PUT, 0.0);
 	}
-	
+
+	public double numberOfRequests(String method) {
+		log.info(meterGet.getOneMinuteRate());
+		log.info(meterPut.getOneMinuteRate());
+		return method.equals("GET") ? statsMap.get(TOTAL_COUNT_GET) : statsMap.get(TOTAL_COUNT_PUT);
+	}
+	public double rateOfRequests(String method) {
+		return method.equals("GET") ? meterGet.getOneMinuteRate() * 60 : meterPut.getOneMinuteRate() * 60;
+	}
 	public void storeRequest(String method) {
-		log.info("TOTAL_COUNT BEFORE + " + statsMap.get(TOTAL_COUNT));
-		Double totalStats = statsMap.get(TOTAL_COUNT);
-		statsMap.put("AVERAGE_RESPONSE", meter.getMeanRate());
-		statsMap.put(TOTAL_COUNT, totalStats + 1);
-		log.info("TOTAL_COUNT AFTER + " + statsMap.get(TOTAL_COUNT));
+		if (method.equals("GET")) {
+			meterGet.mark();
+			log.info("TOTAL_COUNT_GET BEFORE + " + statsMap.get(TOTAL_COUNT_GET));
+			Double totalStats = statsMap.get(TOTAL_COUNT_GET);
+			statsMap.put(TOTAL_COUNT_GET, totalStats + 1);
+			log.info("TOTAL_COUNT_GET AFTER + " + statsMap.get(TOTAL_COUNT_GET));
+		} else {
+			meterPut.mark();
+			log.info("TOTAL_COUNT_PUT BEFORE + " + statsMap.get(TOTAL_COUNT_PUT));
+			Double totalStats = statsMap.get(TOTAL_COUNT_PUT);
+			statsMap.put(TOTAL_COUNT_PUT, totalStats + 1);
+			log.info("TOTAL_COUNT_PUT AFTER + " + statsMap.get(TOTAL_COUNT_PUT));
+		}
 	}
 
 }

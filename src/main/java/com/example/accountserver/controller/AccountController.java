@@ -27,22 +27,31 @@ public class AccountController {
     @ResponseBody
     public Long create(@RequestParam Integer id) {
         log.info("Requested id: " + id);
-        statsService.storeRequest("Get");
+        statsService.storeRequest("GET");
         return accountService.getAmount(id);
     }
 
-    //TODO add check if account id is present in DB
     @PutMapping(path = "/test", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public ResponseEntity<Account> addToBalance(@RequestBody Account account) {
 
-        statsService.storeRequest("Put");
+        statsService.storeRequest("PUT");
         accountService.addAmount(account.getId(), account.getBalance());
         return new ResponseEntity<>(account, HttpStatus.OK);
     }
 
-    @GetMapping(path = "/stats")
-    public double getRequests() {
-        return statsService.numberOfRequests();
+    @GetMapping(path = "/stats/{method}")
+    public double getRequests(@PathVariable String method) {
+        return statsService.numberOfRequests(method);
+    }
+
+    @GetMapping(path = "/stats/{method}/rate")
+    public ResponseEntity<String> getRequestsRate(@PathVariable String method) {
+        return new ResponseEntity<>("Approximate number of requests for " + method + " in last minute: " + statsService.rateOfRequests(method), HttpStatus.OK);
+    }
+
+    @GetMapping(path = "/stats/reset")
+    public void resetStatistic() {
+        statsService.resetStats();
     }
 }
